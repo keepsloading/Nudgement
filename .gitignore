@@ -1,0 +1,8 @@
+backend/.env
+backend/backend.log
+backend/storage/*.json
+backend/venv/
+backend/__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
