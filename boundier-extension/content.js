@@ -336,14 +336,14 @@ async function buildPayload(full = false) {
   if (!isSupportedSurface(content.surface) || isUnsupportedPage()) {
     return {
       error: 'Boundier could not extract enough readable page content.',
-      debug: { ...content.extraction_debug, url: content.url, host: content.host, surface: content.surface, headline: content.headline, headline_length: content.headline.length, snippet_length: content.snippet.length, text_length: content.text_length, reason: 'unsupported-page-or-surface' }
+      debug: { ...content.extraction_debug, url: content.url, host: content.host, surface: content.surface, headline: content.headline, headline_length: content.headline.length, snippet_length: content.snippet.length, text_length: content.text_length, reason: 'insufficient-readable-content' }
     };
   }
 
   if (!hasEnoughContent(content, full)) {
     return {
       error: 'Boundier could not extract enough readable page content.',
-      debug: { ...content.extraction_debug, url: content.url, host: content.host, surface: content.surface, headline: content.headline, headline_length: content.headline.length, snippet_length: content.snippet.length, text_length: content.text_length, reason: 'unsupported-page-or-surface' }
+      debug: { ...content.extraction_debug, url: content.url, host: content.host, surface: content.surface, headline: content.headline, headline_length: content.headline.length, snippet_length: content.snippet.length, text_length: content.text_length, reason: 'insufficient-readable-content' }
     };
   }
 

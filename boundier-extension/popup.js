@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.scripting.executeScript(
       {
         target: { tabId: tab.id },
-        files: ['content.js']
+        files: ['Readability.js', 'extractor.js', 'content.js']
       },
       () => {
         if (chrome.runtime.lastError) {
