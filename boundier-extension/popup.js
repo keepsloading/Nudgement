@@ -74,7 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function requestAnalysis(tab, clearCache, didInject, callback) {
+    console.log('Boundier popup sending get_analysis to tab', tab.id);
     chrome.tabs.sendMessage(tab.id, { action: 'get_analysis', clearCache }, (response) => {
+      console.log('Boundier popup lastError', chrome.runtime.lastError?.message);
+      console.log('Boundier popup response', response);
       const lastError = chrome.runtime.lastError;
       const message = lastError?.message || '';
 
@@ -95,12 +98,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (!response || response.error) {
-        console.warn('Boundier analysis error detail:', response?.debug || response);
-        callback(new Error(friendlyTabError(response?.error || 'Analysis failed.')));
+      if (!response) {
+        callback(new Error('Analysis failed.'));
         return;
       }
 
+      if (response.error) {
+        if (response.debug) {
+          console.warn('Boundier popup extraction/debug:', response.debug);
+        }
+        callback(new Error(friendlyTabError(response.error)));
+        return;
+      }
 
       const score = Number(response.result?.rustmeter_score);
       if (!Number.isFinite(score)) {
