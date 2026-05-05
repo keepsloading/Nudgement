@@ -1,19 +1,15 @@
+const { cleanText, rankReadableCandidates, cleanBodyFallback, words } = self.BoundierExtractor;
+
 const MAX_SNIPPET_WORDS = 650;
-const AUTO_ANALYZE_DEBOUNCE_MS = 1800;
-const MIN_AUTO_TEXT_CHARS = 24;
+const AUTO_ANALYZE_DEBOUNCE_MS = 2500;
+const MIN_AUTO_INTERVAL_MS = 20000;
 
 let analysisTimeout = null;
 let lastAutoHash = null;
-
-function cleanText(value) {
-  return (value || '')
-    .replace(/\s+/g, ' ')
-    .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    .trim();
-}
+let lastAutoRunAt = 0;
 
 function truncateWords(text, limit = MAX_SNIPPET_WORDS) {
-  return cleanText(text).split(' ').filter(Boolean).slice(0, limit).join(' ');
+  return words(text).slice(0, limit).join(' ');
 }
 
 function textFromSelectors(selectors, limit = 14000) {
@@ -57,8 +53,8 @@ function getHeadline() {
       .find((text) => text.length >= 12) || ''
   );
   const bodyFallback = truncateWords(getVisibleBodyText(36), 18);
-  const title = cleanText(document.title);
-  return cleanText(metaTitle || h1 || title || firstHeading || bodyFallback);
+  const title = cleanText(document.title).replace(/\s+[|\-–—]\s+[^|\-–—]+$/, '');
+  return cleanText(metaTitle || h1 || firstHeading || title || bodyFallback);
 }
 
 function getByline() {
@@ -67,14 +63,7 @@ function getByline() {
     'meta[property="article:author"]',
     'meta[name="parsely-author"]'
   ]);
-  const published = getMetaContent([
-    'meta[property="article:published_time"]',
-    'meta[name="pubdate"]',
-    'meta[name="date"]',
-    'time[datetime]'
-  ]);
-
-  return [author, published].filter(Boolean).join(' - ');
+  return cleanText(author);
 }
 
 function getSiteName() {
@@ -167,6 +156,18 @@ function getGenericText() {
   return truncateWords([metaDescription, pageText].filter(Boolean).join(' '), 500);
 }
 
+function runReadabilityExtraction() {
+  if (!self.Readability) return { attempted: false, success: false };
+  try {
+    const clone = document.cloneNode(true);
+    const article = new self.Readability(clone, { charThreshold: 120, nbTopCandidates: 5 }).parse();
+    const text = cleanText(article?.textContent || '');
+    return { attempted: true, success: text.length >= 120, article, text };
+  } catch (e) {
+    return { attempted: true, success: false };
+  }
+}
+
 function getVisibleBodyText(limit = 700) {
   if (!document.body) return '';
 
@@ -248,8 +249,21 @@ function extractContent(full = false) {
     snippet = getGenericText();
   }
 
+  const targeted = snippet;
+  const readability = runReadabilityExtraction();
+  let strategy = targeted && targeted.length >= 80 ? 'targeted-selectors' : 'none';
+  if ((!snippet || snippet.length < 80) && readability.success) {
+    snippet = truncateWords(readability.text, surface === 'article' ? 700 : 500);
+    strategy = 'mozilla-readability';
+  }
+  const ranked = rankReadableCandidates(document, { maxWords: surface === 'article' ? 700 : 500 });
+  if ((!snippet || snippet.length < 80) && ranked.text.length >= 80) {
+    snippet = ranked.text;
+    strategy = 'adaptive-ranked-candidates';
+  }
   if (!snippet || snippet.length < 80) {
-    snippet = getVisibleBodyText(surface === 'article' ? 700 : 450);
+    snippet = cleanBodyFallback(document, surface === 'article' ? 700 : 450);
+    strategy = 'clean-body-fallback';
   }
 
   if (!full) {
@@ -267,8 +281,21 @@ function extractContent(full = false) {
     site_name: getSiteName(),
     page_title: cleanText(document.title),
     surface,
-    word_count: primaryText ? primaryText.split(/\s+/).length : 0,
-    text_length: primaryText.length
+    word_count: words(primaryText).length,
+    text_length: primaryText.length,
+    excerpt: cleanText(getMetaContent(['meta[name="description"]','meta[property="og:description"]','meta[name="twitter:description"]']) || readability?.article?.excerpt),
+    published_time: cleanText(getMetaContent(['meta[property="article:published_time"]','time[datetime]']) || readability?.article?.publishedTime),
+    byline: cleanText(byline || readability?.article?.byline),
+    site_name: cleanText(getSiteName() || readability?.article?.siteName),
+    extraction_debug: {
+      extraction_strategy_used: strategy, readability_attempted: readability.attempted, readability_success: readability.success,
+      candidate_count: ranked.candidates.length,
+      top_candidate_lengths: ranked.candidates.slice(0,5).map(c=>c.length),
+      top_candidate_scores: ranked.candidates.slice(0,5).map(c=>Math.round(c.score)),
+      top_candidate_class_or_id: ranked.candidates.slice(0,5).map(c=>c.classOrId),
+      article_tag_exists: !!document.querySelector('article'),
+      main_tag_exists: !!document.querySelector('main')
+    }
   };
 }
 
@@ -309,26 +336,14 @@ async function buildPayload(full = false) {
   if (!isSupportedSurface(content.surface) || isUnsupportedPage()) {
     return {
       error: 'Boundier could not extract enough readable page content.',
-      debug: {
-        surface: content.surface,
-        headline_length: content.headline.length,
-        snippet_length: content.snippet.length,
-        text_length: content.text_length,
-        url: content.url
-      }
+      debug: { ...content.extraction_debug, url: content.url, host: content.host, surface: content.surface, headline: content.headline, headline_length: content.headline.length, snippet_length: content.snippet.length, text_length: content.text_length, reason: 'unsupported-page-or-surface' }
     };
   }
 
   if (!hasEnoughContent(content, full)) {
     return {
       error: 'Boundier could not extract enough readable page content.',
-      debug: {
-        surface: content.surface,
-        headline_length: content.headline.length,
-        snippet_length: content.snippet.length,
-        text_length: content.text_length,
-        url: content.url
-      }
+      debug: { ...content.extraction_debug, url: content.url, host: content.host, surface: content.surface, headline: content.headline, headline_length: content.headline.length, snippet_length: content.snippet.length, text_length: content.text_length, reason: 'unsupported-page-or-surface' }
     };
   }
 
@@ -351,6 +366,7 @@ async function triggerAnalysis(full = false) {
   }
 
   analysisTimeout = setTimeout(async () => {
+    if (!full && Date.now() - lastAutoRunAt < MIN_AUTO_INTERVAL_MS) return;
     const payload = await buildPayload(full);
     if (payload.error) {
       console.log('Boundier skipped analysis:', payload.error);
@@ -362,6 +378,7 @@ async function triggerAnalysis(full = false) {
     }
 
     lastAutoHash = payload.hash;
+    if (!full) lastAutoRunAt = Date.now();
     chrome.runtime.sendMessage(payload, () => {
       if (chrome.runtime.lastError) {
         console.error('Boundier failed to send analysis message:', chrome.runtime.lastError);
@@ -396,7 +413,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   async function handleAnalysis() {
     const payload = await buildPayload(true);
     if (payload.error) {
-      sendResponse({ error: payload.error });
+      console.warn('Boundier extraction failure (page context):', payload.debug);
+      sendResponse({ error: payload.error, debug: payload.debug });
       return;
     }
 

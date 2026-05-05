@@ -7,6 +7,7 @@ test('rustmeter schema and category coverage', () => {
   const result = scoreContent({ headline: 'You won\'t believe this secret', snippet: 'Like and share now', surface: 'page' }, 't1');
   assert.ok(Number.isFinite(result.rustmeter_score));
   assert.equal(result.aim_score, undefined);
+  ['rustmeter_score','attention_score','emotion_score','framing_score','source_score','category_scores','top_signals','explanations','source','engine_version'].forEach((k)=>assert.ok(Object.hasOwn(result,k), k));
   for (const key of CATEGORY_KEYS) assert.ok(Object.hasOwn(result.category_scores, key));
 });
 

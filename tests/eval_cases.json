@@ -1,24 +1,13 @@
 [
   {
-    "name": "obvious clickbait",
-    "input": {
-      "headline": "You won't believe what happened next",
-      "snippet": "Shocking secret revealed"
-    },
-    "expect": {
-      "min": 0,
-      "max": 100
-    }
-  },
-  {
-    "name": "normal factual headline",
+    "name": "neutral factual article",
     "input": {
       "headline": "City council approves annual budget",
-      "snippet": "The vote passed 7-2 after committee review."
+      "snippet": "The vote passed 7-2 after committee review and published minutes."
     },
     "expect": {
       "min": 0,
-      "max": 35
+      "max": 12
     }
   },
   {
@@ -29,7 +18,18 @@
     },
     "expect": {
       "min": 0,
-      "max": 55
+      "max": 15
+    }
+  },
+  {
+    "name": "obvious clickbait",
+    "input": {
+      "headline": "You won't believe what happened next",
+      "snippet": "Shocking secret revealed, click now."
+    },
+    "expect": {
+      "min": 12,
+      "max": 40
     }
   },
   {
@@ -39,8 +39,8 @@
       "snippet": "They are destroying us, wake up now."
     },
     "expect": {
-      "min": 0,
-      "max": 100
+      "min": 18,
+      "max": 45
     }
   },
   {
@@ -50,8 +50,8 @@
       "snippet": "Many believe this proves the trend."
     },
     "expect": {
-      "min": 0,
-      "max": 90
+      "min": 12,
+      "max": 35
     }
   },
   {
@@ -61,52 +61,52 @@
       "snippet": "Comment below and tag someone."
     },
     "expect": {
-      "min": 0,
-      "max": 100
+      "min": 4,
+      "max": 20
     }
   },
   {
-    "name": "call to action pressure",
-    "input": {
-      "headline": "Join now and boycott",
-      "snippet": "Send this to everyone and don't stay silent."
-    },
-    "expect": {
-      "min": 0,
-      "max": 100
-    }
-  },
-  {
-    "name": "social proof pressure",
-    "input": {
-      "headline": "Everyone is talking about this",
-      "snippet": "Millions agree and the whole internet is waking up."
-    },
-    "expect": {
-      "min": 0,
-      "max": 100
-    }
-  },
-  {
-    "name": "us vs them framing",
+    "name": "us-vs-them framing",
     "input": {
       "headline": "Us vs them: real patriots must act",
       "snippet": "The elites and traitors are winning."
     },
     "expect": {
-      "min": 0,
-      "max": 100
+      "min": 12,
+      "max": 35
     }
   },
   {
-    "name": "neutral academic text",
+    "name": "academic neutral writing",
     "input": {
       "headline": "Study evaluates rainfall variability",
-      "snippet": "The authors compare datasets and discuss confidence intervals."
+      "snippet": "The authors compare datasets and discuss confidence intervals and limitations."
     },
     "expect": {
       "min": 0,
-      "max": 30
+      "max": 12
+    }
+  },
+  {
+    "name": "short text uncertainty",
+    "input": {
+      "headline": "Breaking update",
+      "snippet": "More soon."
+    },
+    "expect": {
+      "min": 0,
+      "max": 20
+    }
+  },
+  {
+    "name": "all-caps urgency",
+    "input": {
+      "headline": "ACT NOW BEFORE IT IS TOO LATE",
+      "snippet": "DO THIS IMMEDIATELY OR FACE CONSEQUENCES"
+    },
+    "expect": {
+      "min": 5,
+      "max": 20
     }
   }
 ]
