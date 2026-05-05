@@ -64,7 +64,7 @@ Rustmeter measures propaganda-like influence patterns in text, including:
 - Primary scoring runs in the extension background worker.
 - No hosted AI service is required.
 - Backend is optional and intended for localhost use.
-- Any backend storage/history is local and should be treated as opt-in.
+- Backend analysis cache is local. Training/history export is opt-in only.
 
 ## Known limitations
 
