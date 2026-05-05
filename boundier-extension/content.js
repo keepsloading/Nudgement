@@ -51,8 +51,14 @@ function getHeadline() {
   ]);
 
   const h1 = cleanText(document.querySelector('h1')?.textContent);
+  const firstHeading = cleanText(
+    Array.from(document.querySelectorAll('h1, h2'))
+      .map((node) => cleanText(node.textContent))
+      .find((text) => text.length >= 12) || ''
+  );
+  const bodyFallback = truncateWords(getVisibleBodyText(36), 18);
   const title = cleanText(document.title);
-  return cleanText(h1 || metaTitle || title);
+  return cleanText(metaTitle || h1 || title || firstHeading || bodyFallback);
 }
 
 function getByline() {
@@ -161,9 +167,52 @@ function getGenericText() {
   return truncateWords([metaDescription, pageText].filter(Boolean).join(' '), 500);
 }
 
+function getVisibleBodyText(limit = 700) {
+  if (!document.body) return '';
+
+  const ignoredTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'SVG', 'CANVAS', 'IFRAME']);
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent || ignoredTags.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
+
+      const text = cleanText(node.textContent);
+      if (text.length < 24) return NodeFilter.FILTER_REJECT;
+
+      const style = window.getComputedStyle(parent);
+      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  const chunks = [];
+  const seen = new Set();
+  while (walker.nextNode()) {
+    const text = cleanText(walker.currentNode.textContent);
+    if (text && !seen.has(text)) {
+      seen.add(text);
+      chunks.push(text);
+    }
+  }
+
+  return truncateWords(chunks.join(' '), limit);
+}
 
 function isSupportedSurface(surface) {
   return ['article', 'video', 'social', 'page'].includes(surface);
+}
+
+function isUnsupportedPage() {
+  const protocol = location.protocol.toLowerCase();
+  if (protocol.startsWith('chrome') || protocol.startsWith('edge') || protocol.startsWith('about')) {
+    return true;
+  }
+
+  const host = location.hostname.toLowerCase();
+  return host.includes('chrome.google.com') || host.includes('microsoftedge.microsoft.com');
 }
 
 function getFastSnippetLimit(surface) {
@@ -187,6 +236,10 @@ function extractContent(full = false) {
     snippet = getArticleText();
   } else {
     snippet = getGenericText();
+  }
+
+  if (!snippet || snippet.length < 80) {
+    snippet = getVisibleBodyText(surface === 'article' ? 700 : 450);
   }
 
   if (!full) {
@@ -233,20 +286,40 @@ async function getHash(content) {
 }
 
 function hasEnoughContent(content, forceFull = false) {
-  if (content.headline.length >= MIN_AUTO_TEXT_CHARS) return true;
-  if (forceFull && content.snippet.length >= MIN_AUTO_TEXT_CHARS) return true;
-  return content.snippet.length >= 80;
+  const combinedLength = cleanText(`${content.headline} ${content.snippet}`).length;
+  if (combinedLength >= 60) return true;
+  if (forceFull && content.snippet.length >= 40) return true;
+  if (content.headline.length >= 24) return true;
+  return false;
 }
 
 async function buildPayload(full = false) {
   const content = extractContent(full);
 
-  if (!isSupportedSurface(content.surface)) {
-    return { error: 'Boundier could not extract enough readable page content.' };
+  if (!isSupportedSurface(content.surface) || isUnsupportedPage()) {
+    return {
+      error: 'Boundier could not extract enough readable page content.',
+      debug: {
+        surface: content.surface,
+        headline_length: content.headline.length,
+        snippet_length: content.snippet.length,
+        text_length: content.text_length,
+        url: content.url
+      }
+    };
   }
 
   if (!hasEnoughContent(content, full)) {
-    return { error: 'Boundier could not extract enough readable page content.' };
+    return {
+      error: 'Boundier could not extract enough readable page content.',
+      debug: {
+        surface: content.surface,
+        headline_length: content.headline.length,
+        snippet_length: content.snippet.length,
+        text_length: content.text_length,
+        url: content.url
+      }
+    };
   }
 
   const hash = await getHash(content);
