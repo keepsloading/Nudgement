@@ -4,9 +4,9 @@
   "version": "2.0",
   "description": "Local-first propaganda and influence analysis with Rustmeter scoring.",
   "icons": {
-    "16": "icons/boundierLogo.png",
-    "48": "icons/boundierLogo.png",
-    "128": "icons/boundierLogo.png"
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
   },
   "permissions": [
     "activeTab",
