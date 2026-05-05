@@ -1,21 +1,77 @@
 # Boundier
 
-Boundier is a local-first browser extension for detecting clickbait, emotional pressure, and manipulative framing on webpages.
+Boundier is a **local-first propaganda and influence analysis engine** for webpages, social feeds, and video pages.
 
-It analyzes page text, headlines, social posts, and video-page metadata with a deterministic scoring engine. The extension gives an AIM score, a clickbait score, category breakdowns, and the phrases that triggered concern.
+It analyzes language patterns with a deterministic scoring system and reports a **Rustmeter score** with transparent signal-level reasoning. Boundier is designed to highlight propaganda-like influence pressure patterns, not to judge truth.
 
 ## Project Note
 
-Boundier began as a Gen AI TechGyan hackathon project at IIT Bombay, built in under 30 minutes in March 2025, where it won first prize. I added it to GitHub later because I was not on GitHub during that period; this repository includes the original project with a few cleanup and scoring changes.
+Boundier began as a Gen AI TechGyan hackathon project at IIT Bombay, built in under 30 minutes in March 2025, where it won first prize. I added it to GitHub later because I was not on GitHub during that period; this repository includes the original project with cleanup and scoring improvements.
 
-## Features
+## What Boundier does
 
-- Local AIM scoring in the extension background worker
-- Clickbait, urgency, fear, outrage, polarization, manipulation, certainty, credibility, and engagement-bait signals
+- Scores influence-pressure signals locally in the extension by default
+- Surfaces Rustmeter score, subscores, and signal evidence for each page
+- Highlights propaganda-style framing patterns (attention, emotion, framing, and source pressure)
 - Works across articles, social pages, video pages, and generic webpages
-- Popup report with score breakdowns and flagged phrases
-- Optional Flask backend for local scoring and future transformer enrichment
-- No external LLM or hosted AI API required
+- Keeps backend optional for local experiments
+
+## What Boundier does not do
+
+- It does **not** determine objective truth.
+- It does **not** label content as misinformation/disinformation.
+- It does **not** infer or prove author intent.
+- It does **not** replace source verification, media literacy, or editorial judgment.
+
+## What Rustmeter™ measures
+
+Rustmeter™ measures propaganda-like influence patterns in text, including:
+
+- Attention Capture
+- Clickbait
+- Emotional Pressure
+- Fear Appeal
+- Outrage Amplification
+- False Urgency
+- Loaded Language
+- Enemy Construction / Us-vs-Them Framing
+- Polarization
+- Certainty Inflation
+- Source Obscurity
+- Social Proof Pressure
+- Engagement Bait
+- Call-to-Action Pressure
+
+## Technique definitions
+
+- **Attention Capture**: Language engineered to instantly grab attention.
+- **Clickbait**: Curiosity-gap hooks that withhold core context.
+- **Emotional Pressure**: Wording that drives fast emotional reaction.
+- **Fear Appeal**: Threat-oriented framing to trigger alarm.
+- **Outrage Amplification**: Anger-oriented framing before evidence.
+- **False Urgency**: “Act now” pressure without real time constraints.
+- **Loaded Language**: Emotionally charged words that bias interpretation.
+- **Enemy Construction / Us-vs-Them Framing**: In-group/out-group identity conflict cues.
+- **Polarization**: Framing that pushes rigid opposing camps.
+- **Certainty Inflation**: Absolute certainty that removes nuance.
+- **Source Obscurity**: Vague attribution and unverifiable sourcing.
+- **Social Proof Pressure**: “Everyone knows/says” pressure cues.
+- **Engagement Bait**: Prompts optimized for likes, comments, or shares.
+- **Call-to-Action Pressure**: Imperative prompts that push immediate action.
+
+## Privacy / local-first note
+
+- Primary scoring runs in the extension background worker.
+- No hosted AI service is required.
+- Backend is optional and intended for localhost use.
+- Any backend storage/history is local and should be treated as opt-in.
+
+## Known limitations
+
+- Rule-based scoring can miss subtle or context-dependent rhetoric.
+- Scores may vary by page text extraction quality.
+- Short snippets can create higher uncertainty.
+- The model measures influence-like patterns, not factual correctness.
 
 ## Extension Setup
 
@@ -25,43 +81,10 @@ Boundier began as a Gen AI TechGyan hackathon project at IIT Bombay, built in un
 4. Select the `boundier-extension` folder.
 5. Open a normal webpage and click the Boundier icon.
 
-If the extension was just reloaded, refresh any already-open webpage once or use the popup reload button. Browser pages such as `chrome://extensions` cannot be analyzed.
-
 ## Optional Backend
-
-The extension scores locally by default. The backend is optional and currently provides a local Flask scoring endpoint that can be extended with transformer-based enrichment.
-
-```bat
-cd backend
-start_backend.bat
-```
-
-Or run directly:
 
 ```bash
 cd backend
 pip install -r requirements.txt
 python app.py
 ```
-
-## Project Structure
-
-```text
-boundier-extension/
-  manifest.json
-  background.js
-  content.js
-  popup.html
-  popup.js
-  popup.css
-backend/
-  app.py
-  requirements.txt
-  start_backend.bat
-LICENSE
-README.md
-```
-
-## License
-
-Boundier is open source under the MIT License. See `LICENSE`.

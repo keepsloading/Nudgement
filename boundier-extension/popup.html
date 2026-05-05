@@ -2,69 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Boundier</title>
+  <title>Boundier Rustmeter</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cooper+Hewitt:wght@400;700&display=swap">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <header>
-    <img src="icons/LogoForHeader.png" alt="Boundier Logo">
+    <div class="brand">
+      <img src="icons/LogoForHeader.png" alt="Boundier Logo">
+      <div>
+        <h1>Boundier</h1>
+        <p>Rustmeter summary</p>
+      </div>
+    </div>
     <button id="reload-btn" title="Reload analysis" aria-label="Reload analysis">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.3L13 11h8V3z"></path>
-      </svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.3L13 11h8V3z"></path></svg>
     </button>
   </header>
 
-  <div id="loading" style="display: none;">
-    <div class="spinner"></div>
-    <p>Analyzing page...</p>
-  </div>
-
+  <div id="loading" style="display: none;"><div class="spinner"></div><p>Analyzing page...</p></div>
   <p id="error" class="error" style="display: none;"></p>
 
   <div id="content" style="display: none;">
     <div id="score-container">
+      <p id="score-label">Rustmeter</p>
       <div id="score"></div>
       <p id="status"></p>
       <p id="meta"></p>
     </div>
 
     <div id="summary-grid">
-      <div class="summary-card">
-        <span class="summary-label">Clickbait</span>
-        <strong id="clickbait-score">0</strong>
-      </div>
-      <div class="summary-card">
-        <span class="summary-label">Manipulation</span>
-        <strong id="manipulation-score">0</strong>
-      </div>
-      <div class="summary-card">
-        <span class="summary-label">Affect</span>
-        <strong id="affect-score">0</strong>
-      </div>
-      <div class="summary-card">
-        <span class="summary-label">Intent</span>
-        <strong id="intent-score">0</strong>
-      </div>
+      <div class="summary-card"><span class="summary-label">Attention</span><strong id="attention-score">0</strong></div>
+      <div class="summary-card"><span class="summary-label">Emotion</span><strong id="emotion-score">0</strong></div>
+      <div class="summary-card"><span class="summary-label">Framing</span><strong id="framing-score">0</strong></div>
+      <div class="summary-card"><span class="summary-label">Source</span><strong id="source-score">0</strong></div>
     </div>
 
-    <section id="breakdown">
-      <h2>Signal Breakdown</h2>
-      <div id="category-bars"></div>
-    </section>
-
-    <section id="phrases">
-      <h2>Flagged Signals</h2>
-      <div class="phrases-list">
-        <ul></ul>
-      </div>
-    </section>
-
-    <section id="explanations">
-      <h2>Why</h2>
-      <ul></ul>
-    </section>
+    <section id="breakdown"><h2>Technique Breakdown</h2><div id="category-bars"></div></section>
+    <section id="phrases"><h2>Flagged Signals</h2><div class="phrases-list"><ul></ul></div></section>
+    <section id="explanations"><h2>Why</h2><ul></ul></section>
   </div>
 
   <script src="popup.js"></script>

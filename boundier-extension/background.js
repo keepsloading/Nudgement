@@ -18,19 +18,19 @@ const SIGNALS = [
     pattern: /\b(shocking|shocked|revealed|exposed|secret|hidden|jaw-dropping|mind-blowing|finally discovered|went viral)\b/gi
   },
   {
-    category: 'urgency',
+    category: 'false_urgency',
     weight: 14,
     reason: 'Urgency language pressures quick reaction.',
     pattern: /\b(breaking|urgent|act now|right now|immediately|before it's too late|before it is too late|last chance|don't miss|do not miss|must see)\b/gi
   },
   {
-    category: 'fear',
+    category: 'fear_appeal',
     weight: 13,
     reason: 'Fear framing emphasizes threat or danger.',
     pattern: /\b(warning|dangerous|threat|crisis|disaster|nightmare|collapse|chaos|catastrophe|deadly|risk|panic)\b/gi
   },
   {
-    category: 'outrage',
+    category: 'outrage_amplification',
     weight: 13,
     reason: 'Outrage framing primes anger before evidence.',
     pattern: /\b(furious|outraged|rage|backlash|slammed|blasted|destroyed|humiliated|meltdown|scandal|betrayed)\b/gi
@@ -42,25 +42,25 @@ const SIGNALS = [
     pattern: /\b(us vs them|real americans|anti-national|traitors|enemies of the people|the elites|mainstream media|corrupt media|woke mob|leftists|right-wingers)\b/gi
   },
   {
-    category: 'manipulation',
+    category: 'loaded_language',
     weight: 12,
     reason: 'Coercive wording pushes guilt, shame, or forced agreement.',
     pattern: /\b(if you care|share this if|only idiots|wake up|open your eyes|they don't want you to know|they do not want you to know|you are being lied to)\b/gi
   },
   {
-    category: 'certainty',
+    category: 'certainty_inflation',
     weight: 10,
     reason: 'Absolute certainty can flatten nuance.',
     pattern: /\b(always|never|everyone knows|nobody talks about|proves|proof that|undeniable|guaranteed|without question|no doubt)\b/gi
   },
   {
-    category: 'credibility',
+    category: 'source_obscurity',
     weight: 9,
     reason: 'Vague attribution weakens verifiability.',
     pattern: /\b(experts say|sources say|people are saying|some say|many believe|it is believed|reportedly|allegedly|rumor has it)\b/gi
   },
   {
-    category: 'attention',
+    category: 'engagement_bait',
     weight: 10,
     reason: 'Engagement bait asks for interaction instead of understanding.',
     pattern: /\b(like and share|share before|comment below|tag someone|subscribe now|watch till the end|watch until the end)\b/gi
@@ -107,15 +107,20 @@ function collectMatches(content) {
   const body = cleanText([content.byline, content.snippet].filter(Boolean).join(' '));
   const allText = cleanText([headline, body].filter(Boolean).join(' '));
   const scores = {
+    attention_capture: 0,
     clickbait: 0,
-    urgency: 0,
-    fear: 0,
-    outrage: 0,
+    emotional_pressure: 0,
+    fear_appeal: 0,
+    outrage_amplification: 0,
+    false_urgency: 0,
+    loaded_language: 0,
+    enemy_construction: 0,
     polarization: 0,
-    manipulation: 0,
-    certainty: 0,
-    credibility: 0,
-    attention: 0
+    certainty_inflation: 0,
+    source_obscurity: 0,
+    social_proof_pressure: 0,
+    engagement_bait: 0,
+    call_to_action_pressure: 0
   };
   const evidence = [];
 
@@ -151,7 +156,7 @@ function collectMatches(content) {
 
   if (sensationalPunctuation > 0) {
     addScore(scores, 'clickbait', sensationalPunctuation);
-    addScore(scores, 'urgency', sensationalPunctuation * 0.6);
+    addScore(scores, 'false_urgency', sensationalPunctuation * 0.6);
     evidence.push({
       phrase: exclamationCount ? 'Exclamation-heavy phrasing' : 'Question-heavy phrasing',
       reason: 'Punctuation increases emotional pressure.',
@@ -162,12 +167,12 @@ function collectMatches(content) {
   }
 
   if (capsPressure > 0) {
-    addScore(scores, 'urgency', capsPressure);
-    addScore(scores, 'manipulation', capsPressure * 0.5);
+    addScore(scores, 'false_urgency', capsPressure);
+    addScore(scores, 'loaded_language', capsPressure * 0.5);
     evidence.push({
       phrase: 'All-caps emphasis',
       reason: 'Capitalized words can simulate shouting or urgency.',
-      category: 'urgency',
+      category: 'false_urgency',
       weight: capsPressure,
       location: 'style'
     });
@@ -189,42 +194,42 @@ function scoreContent(content, requestId) {
     Object.entries(scores).map(([key, raw]) => [key, normalizeBucket(raw, wordCount)])
   );
 
-  const affectScore = clamp(Math.round(
-    normalized.fear * 0.32 +
-    normalized.outrage * 0.30 +
-    normalized.urgency * 0.22 +
-    normalized.clickbait * 0.16
+  const attentionScore = clamp(Math.round(
+    normalized.attention_capture * 0.24 +
+    normalized.clickbait * 0.28 +
+    normalized.false_urgency * 0.22 +
+    normalized.engagement_bait * 0.16 +
+    normalized.call_to_action_pressure * 0.10
   ));
 
-  const intentScore = clamp(Math.round(
-    normalized.clickbait * 0.34 +
-    normalized.attention * 0.20 +
-    normalized.urgency * 0.18 +
-    normalized.credibility * 0.16 +
-    normalized.certainty * 0.12
+  const emotionScore = clamp(Math.round(
+    normalized.emotional_pressure * 0.26 +
+    normalized.fear_appeal * 0.24 +
+    normalized.outrage_amplification * 0.24 +
+    normalized.loaded_language * 0.16 +
+    normalized.social_proof_pressure * 0.10
   ));
 
-  const manipulationScore = clamp(Math.round(
-    normalized.manipulation * 0.28 +
+  const framingScore = clamp(Math.round(
+    normalized.enemy_construction * 0.28 +
     normalized.polarization * 0.24 +
-    normalized.fear * 0.18 +
-    normalized.outrage * 0.14 +
-    normalized.certainty * 0.10 +
-    normalized.credibility * 0.06
+    normalized.loaded_language * 0.20 +
+    normalized.certainty_inflation * 0.18 +
+    normalized.outrage_amplification * 0.10
   ));
 
-  const clickbaitScore = clamp(Math.round(
-    normalized.clickbait * 0.56 +
-    normalized.urgency * 0.18 +
-    normalized.attention * 0.14 +
-    normalized.certainty * 0.12
+  const sourceScore = clamp(Math.round(
+    normalized.source_obscurity * 0.42 +
+    normalized.certainty_inflation * 0.24 +
+    normalized.social_proof_pressure * 0.18 +
+    normalized.call_to_action_pressure * 0.16
   ));
 
-  const aimScore = clamp(Math.round(
-    affectScore * 0.26 +
-    intentScore * 0.24 +
-    manipulationScore * 0.30 +
-    clickbaitScore * 0.20
+  const rustmeterScore = clamp(Math.round(
+    attentionScore * 0.29 +
+    emotionScore * 0.27 +
+    framingScore * 0.26 +
+    sourceScore * 0.18
   ));
 
   const sortedEvidence = evidence
@@ -234,15 +239,15 @@ function scoreContent(content, requestId) {
       return arr.findIndex((other) => other.phrase.toLowerCase() === phrase) === index;
     });
 
-  const topPhrases = sortedEvidence.slice(0, 5).map((item) => ({
-    phrase: item.phrase,
+  const topSignals = sortedEvidence.slice(0, 5).map((item) => ({
+    signal: item.phrase,
     reason: item.reason,
     category: item.category
   }));
 
-  while (topPhrases.length < 3) {
-    topPhrases.push({
-      phrase: 'No strong manipulative phrase found',
+  while (topSignals.length < 3) {
+    topSignals.push({
+      signal: 'No strong influence signal found',
       reason: 'The local scorer did not find enough high-confidence signals.',
       category: 'baseline'
     });
@@ -254,18 +259,20 @@ function scoreContent(content, requestId) {
     .map(([category]) => category);
 
   const uncertainty = clamp(18 - Math.min(10, sortedEvidence.length * 2) + (wordCount < 40 ? 5 : 0), 6, 22);
-  const low = clamp(aimScore - uncertainty);
-  const high = clamp(aimScore + uncertainty);
+  const low = clamp(rustmeterScore - uncertainty);
+  const high = clamp(rustmeterScore + uncertainty);
 
   return {
-    affect_score: affectScore,
-    intent_score: intentScore,
-    manipulation_score: manipulationScore,
-    clickbait_score: clickbaitScore,
-    aim_score: aimScore,
+    attention_score: attentionScore,
+    emotion_score: emotionScore,
+    framing_score: framingScore,
+    source_score: sourceScore,
+    rustmeter_score: rustmeterScore,
+    aim_score: rustmeterScore,
     confidence_interval: `${low}-${high}`,
-    top_phrases: topPhrases.slice(0, 5),
-    explanations: buildExplanations(aimScore, activeTactics, content.surface, wordCount),
+    top_signals: topSignals.slice(0, 5),
+    top_phrases: topSignals.slice(0, 5),
+    explanations: buildExplanations(rustmeterScore, activeTactics, content.surface, wordCount),
     category_scores: normalized,
     tactics: activeTactics,
     content_type: content.surface || 'page',
@@ -279,12 +286,12 @@ function scoreContent(content, requestId) {
   };
 }
 
-function buildExplanations(aimScore, tactics, surface, wordCount) {
-  const severity = aimScore >= 70 ? 'High' : aimScore >= 40 ? 'Moderate' : 'Low';
+function buildExplanations(rustmeterScore, tactics, surface, wordCount) {
+  const severity = rustmeterScore >= 70 ? 'High' : rustmeterScore >= 40 ? 'Moderate' : 'Low';
   const mainTactics = tactics.length ? tactics.slice(0, 3).join(', ') : 'few clear pressure tactics';
 
   return [
-    `${severity} AIM risk based on local scoring of ${surface || 'page'} content.`,
+    `${severity} Rustmeter influence pressure based on local scoring of ${surface || 'page'} content.`,
     `Primary signals: ${mainTactics}.`,
     `Analyzed ${wordCount} words without external AI calls.`
   ];

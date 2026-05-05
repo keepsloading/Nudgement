@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function renderPhrases(items = []) {
+  function renderSignals(items = []) {
     const list = document.querySelector('#phrases ul');
     clearNode(list);
 
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const phrase = document.createElement('div');
       phrase.className = 'phrase';
-      phrase.textContent = item.phrase || 'Signal';
+      phrase.textContent = item.signal || item.phrase || 'Signal';
 
       const category = document.createElement('span');
       category.className = 'category-tag';
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderResult(result) {
-    const score = Number(result.aim_score || 0);
+    const score = Number(result.rustmeter_score ?? result.aim_score ?? 0);
     const color = scoreColor(score);
     const pageLabel = result.site_name || result.page_title || result.host || result.content_type || 'This page';
 
@@ -199,13 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('score').style.backgroundColor = color;
     setText('status', riskLabel(score));
     setText('meta', pageLabel);
-    setText('clickbait-score', result.clickbait_score ?? 0);
-    setText('manipulation-score', result.manipulation_score ?? 0);
-    setText('affect-score', result.affect_score ?? 0);
-    setText('intent-score', result.intent_score ?? 0);
+    setText('attention-score', result.attention_score ?? result.clickbait_score ?? 0);
+    setText('emotion-score', result.emotion_score ?? result.affect_score ?? 0);
+    setText('framing-score', result.framing_score ?? result.manipulation_score ?? 0);
+    setText('source-score', result.source_score ?? result.intent_score ?? 0);
 
     renderCategoryBars(result.category_scores || {});
-    renderPhrases(result.top_phrases || []);
+    renderSignals(result.top_signals || result.top_phrases || []);
     renderExplanations(result.explanations || []);
   }
 
