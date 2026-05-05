@@ -4,17 +4,15 @@ This Flask backend is optional. The extension runs local-first scoring without i
 
 ## Purpose
 
-- Expose a local `/analyze` endpoint for experimentation
-- Keep scoring and data handling on your own machine
-- Allow opt-in storage for local history/training records
+- Provide a local `/analyze` endpoint for experimentation.
+- Keep all processing on your own machine.
+- Support opt-in local storage for history or training experiments.
 
 ## Privacy and storage
 
-- Host binds to `127.0.0.1` only
-- Analysis history cache is local under `storage/`.
-- Training/history export is opt-in only.
-- Do not store page text unless explicitly requested.
-- If you do not want history, do not run backend endpoints that write it (or disable writes in code)
+- Binds to `127.0.0.1` only.
+- Storage is local under `storage/`.
+- Do not store page text unless explicitly enabling storage flows.
 
 ## Run
 
