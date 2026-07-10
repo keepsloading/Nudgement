@@ -64,4 +64,7 @@ python -m pytest backend/tests/test_scoring.py
 
 
 > [!NOTE]
+> *I always liked the name CognitiveFirewall and I named it at the hackathon. However, the name now suits for another project I built (an autonomous Discord bot). This project has been renamed from CognitiveFirewall to CognitiveFirewall to make room for it.*
+
+> [!NOTE]
 > *I always liked the name Boundier and I named it at the hackathon. However, the name now suits for another project I built (an autonomous Discord bot). This project has been renamed from Boundier to CognitiveFirewall to make room for it.*
