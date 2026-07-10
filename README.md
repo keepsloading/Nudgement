@@ -1,24 +1,24 @@
-# Boundier
+# CognitiveFirewall
 
-Boundier is a local-first influence-pressure analysis tool for webpages, social feeds, and video page metadata.
+CognitiveFirewall is a local-first influence-pressure analysis tool for webpages, social feeds, and video page metadata.
 
 It analyzes visible language patterns with deterministic Rustmeter scoring and provides evidence-linked signal explanations.
 
 
 ## Evidence model
 
-Boundier does not only show a score. It surfaces the signals that contributed to the score, including the detected phrase or pattern, the category it affected, and a short reason.
+CognitiveFirewall does not only show a score. It surfaces the signals that contributed to the score, including the detected phrase or pattern, the category it affected, and a short reason.
 
 The “Why” section explains the main evidence behind the Rustmeter score. For low scores, it may also explain which stronger pressure signals were not detected. A low score means the page may contain a few mild cues, but not enough evidence for high influence pressure.
 
-## What Boundier does
+## What CognitiveFirewall does
 
 - Scores visible page text locally by default.
 - Reports Rustmeter score and category subscores.
 - Highlights propaganda-like patterns in wording pressure.
 - Supports article, social, video, and general webpage surfaces.
 
-## What Boundier does not do
+## What CognitiveFirewall does not do
 
 - It does not judge objective truth.
 - It does not classify misinformation or disinformation.
@@ -61,3 +61,7 @@ python app.py
 npm test
 python -m pytest backend/tests/test_scoring.py
 ```
+
+
+> [!NOTE]
+> *I always liked the name Boundier and I named it at the hackathon. However, the name now suits for another project I built (an autonomous Discord bot). This project has been renamed from Boundier to CognitiveFirewall to make room for it.*
