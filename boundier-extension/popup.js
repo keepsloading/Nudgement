@@ -41,11 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function friendlyTabError(message) {
     if (/receiving end does not exist|could not establish connection/i.test(message || '')) {
-      return 'Boundier was not attached to this tab yet. Reload analysis to attach it, or refresh the page once after updating the extension.';
+      return 'Cognitive Firewall was not attached to this tab yet. Reload analysis to attach it, or refresh the page once after updating the extension.';
     }
 
     if (/cannot access|chrome:|edge:|extension|webstore|permissions/i.test(message || '')) {
-      return 'Boundier cannot analyze browser, extension, or store pages. Open a normal webpage and try again.';
+      return 'Cognitive Firewall cannot analyze browser, extension, or store pages. Open a normal webpage and try again.';
     }
 
     return message || 'Analysis failed.';
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function injectContentScript(tab, callback) {
     if (!chrome.scripting || !canInjectIntoTab(tab)) {
-      callback(new Error('Boundier cannot analyze browser, extension, or store pages. Open a normal webpage and try again.'));
+      callback(new Error('Cognitive Firewall cannot analyze browser, extension, or store pages. Open a normal webpage and try again.'));
       return;
     }
 
@@ -83,14 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function requestAnalysis(tab, clearCache, didInject, callback) {
-    console.log('Boundier popup sending get_analysis to tab', tab.id);
+    console.log('Cognitive Firewall popup sending get_analysis to tab', tab.id);
 
     chrome.tabs.sendMessage(tab.id, { action: 'get_analysis', clearCache }, (response) => {
       const lastError = chrome.runtime.lastError;
       const message = lastError?.message || '';
 
-      console.log('Boundier popup lastError', message || undefined);
-      console.log('Boundier popup response', response);
+      console.log('Cognitive Firewall popup lastError', message || undefined);
+      console.log('Cognitive Firewall popup response', response);
 
       if (lastError) {
         if (!didInject && /receiving end does not exist|could not establish connection/i.test(message)) {
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (response.error) {
         if (response.debug) {
-          console.warn('Boundier popup extraction/debug:', response.debug);
+          console.warn('Cognitive Firewall popup extraction/debug:', response.debug);
         }
 
         callback(new Error(friendlyTabError(response.error)));
@@ -127,8 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const score = Number(result?.rustmeter_score);
 
       if (!Number.isFinite(score)) {
-        console.warn('Boundier popup received invalid analysis result:', response);
-        callback(new Error('Boundier received an invalid Rustmeter result.'));
+        console.warn('Cognitive Firewall popup received invalid analysis result:', response);
+        callback(new Error('Cognitive Firewall received an invalid Rustmeter result.'));
         return;
       }
 
