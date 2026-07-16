@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
           circle.style.background = dimDef.color + '33'; // 20% opacity
           circle.style.borderColor = dimDef.color;
           // Small count badge
-          circle.title = `${day.entries.length} page${day.entries.length > 1 ? 's' : ''} — ${dimDef.label}`;
+          circle.title = `${day.entries.length} page${day.entries.length > 1 ? 's' : ''}: ${dimDef.label}`;
         }
       }
 
