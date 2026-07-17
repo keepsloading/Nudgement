@@ -6,7 +6,7 @@
  * Preserved from original hackathon build (Boundier/IIT Bombay).
  * Changes: renamed globals, updated error strings, removed double declarations.
  */
-const { cleanText, rankReadableCandidates, cleanBodyFallback, words } = self.NudgementExtractor;
+const { cleanText, rankReadableCandidates, cleanBodyFallback, words, filterBoilerplate } = self.NudgementExtractor;
 
 const MAX_SNIPPET_WORDS = 650;
 const AUTO_ANALYZE_DEBOUNCE_MS = 2500;
@@ -115,14 +115,21 @@ function getSocialText() {
 }
 
 function getVideoText() {
+  // Meta tags are the most reliable on dynamic video sites — always load before JS runs
   const metaDescription = getMetaContent([
     'meta[name="description"]',
     'meta[property="og:description"]',
     'meta[name="twitter:description"]'
   ]);
+  // YouTube layout variants: yt-watch-metadata, expanded description, old layout
   const pageText = textFromSelectors([
-    '#title h1', 'h1', '#description', 'ytd-watch-metadata',
-    'main h1', 'main p'
+    '#title h1',
+    'ytd-expander #snippet-text',
+    '#description yt-formatted-string',
+    'ytd-expandable-video-description-body-renderer yt-formatted-string',
+    'ytd-watch-metadata #description',
+    '#description',
+    'h1', 'main h1', 'main p'
   ], 320);
   return truncateWords([metaDescription, pageText].filter(Boolean).join(' '), 320);
 }
@@ -193,63 +200,91 @@ function isUnsupportedPage() {
 
 function getFastSnippetLimit(surface) {
   if (surface === 'article') return 360;
-  if (surface === 'video') return 180;
-  if (surface === 'social') return 120;
-  return 180;
+  if (surface === 'video') return 220;
+  if (surface === 'social') return 280;   // was 120 — Reddit/Threads posts can be long
+  return 220;
 }
 
 function extractContent(full = false) {
   const surface = detectSurface();
   const headline = getHeadline();
-  const byline = getByline();
-  let snippet = '';
+  const byline   = getByline();
+  let snippet  = '';
+  let strategy = 'none';
 
-  if (surface === 'video') snippet = getVideoText();
-  else if (surface === 'social') snippet = getSocialText();
+  // Track fallback results lazily — only computed when needed
+  let readabilityResult = null;
+  let rankedResult      = null;
+
+  // ── Strategy 1: surface-specific targeted selectors ──────────────────────
+  if (surface === 'video')        snippet = getVideoText();
+  else if (surface === 'social')  snippet = getSocialText();
   else if (surface === 'article') snippet = getArticleText();
-  else snippet = getGenericText();
+  else                            snippet = getGenericText();
 
-  const readability = runReadabilityExtraction();
-  let strategy = snippet && snippet.length >= 80 ? 'targeted-selectors' : 'none';
-  if ((!snippet || snippet.length < 80) && readability.success) {
-    snippet = truncateWords(readability.text, surface === 'article' ? 700 : 500);
-    strategy = 'mozilla-readability';
+  const ENOUGH = 80; // minimum chars to consider a strategy successful
+  if (snippet && snippet.length >= ENOUGH) {
+    strategy = 'targeted-selectors';
+  } else {
+    // ── Strategy 2: Mozilla Readability (lazy) ────────────────────────────
+    readabilityResult = runReadabilityExtraction();
+    if (readabilityResult.success) {
+      snippet  = truncateWords(readabilityResult.text, surface === 'article' ? 700 : 500);
+      strategy = 'mozilla-readability';
+    }
+
+    // ── Strategy 3: Adaptive ranked DOM candidates (lazy) ─────────────────
+    if (!snippet || snippet.length < ENOUGH) {
+      rankedResult = rankReadableCandidates(document, { maxWords: surface === 'article' ? 700 : 500 });
+      if (rankedResult.text.length >= ENOUGH) {
+        snippet  = rankedResult.text;
+        strategy = 'adaptive-ranked-candidates';
+      }
+    }
+
+    // ── Strategy 4: Clean body fallback ───────────────────────────────────
+    if (!snippet || snippet.length < ENOUGH) {
+      snippet  = cleanBodyFallback(document, surface === 'article' ? 700 : 450);
+      strategy = 'clean-body-fallback';
+    }
   }
-  const ranked = rankReadableCandidates(document, { maxWords: surface === 'article' ? 700 : 500 });
-  if ((!snippet || snippet.length < 80) && ranked.text.length >= 80) {
-    snippet = ranked.text;
-    strategy = 'adaptive-ranked-candidates';
-  }
-  if (!snippet || snippet.length < 80) {
-    snippet = cleanBodyFallback(document, surface === 'article' ? 700 : 450);
-    strategy = 'clean-body-fallback';
-  }
+
+  // ── Post-processing: strip UI chrome / boilerplate lines ─────────────────
+  if (snippet) snippet = filterBoilerplate(snippet) || snippet;
+
   if (!full) snippet = truncateWords(snippet, getFastSnippetLimit(surface));
 
-  const primaryText = cleanText([headline, byline, snippet].filter(Boolean).join(' '));
+  const finalByline   = cleanText(byline || readabilityResult?.article?.byline || '');
+  const primaryText   = cleanText([headline, finalByline, snippet].filter(Boolean).join(' '));
 
   return {
     headline,
-    byline: cleanText(byline || readability?.article?.byline),
+    byline:    finalByline,
     snippet,
-    url: location.href,
-    host: location.hostname,
-    site_name: cleanText(getSiteName() || readability?.article?.siteName),
+    url:        location.href,
+    host:       location.hostname,
+    site_name:  cleanText(getSiteName() || readabilityResult?.article?.siteName || ''),
     page_title: cleanText(document.title),
     surface,
-    word_count: words(primaryText).length,
+    word_count:  words(primaryText).length,
     text_length: primaryText.length,
-    excerpt: cleanText(getMetaContent(['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]']) || readability?.article?.excerpt),
-    published_time: cleanText(getMetaContent(['meta[property="article:published_time"]', 'time[datetime]']) || readability?.article?.publishedTime),
+    excerpt: cleanText(
+      getMetaContent(['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]']) ||
+      readabilityResult?.article?.excerpt || ''
+    ),
+    published_time: cleanText(
+      getMetaContent(['meta[property="article:published_time"]', 'time[datetime]']) ||
+      readabilityResult?.article?.publishedTime || ''
+    ),
     extraction_debug: {
       extraction_strategy_used: strategy,
-      readability_attempted: readability.attempted,
-      readability_success: readability.success,
-      candidate_count: ranked.candidates.length,
-      top_candidate_lengths: ranked.candidates.slice(0, 5).map(c => c.length),
-      top_candidate_scores: ranked.candidates.slice(0, 5).map(c => Math.round(c.score)),
+      readability_attempted: readabilityResult?.attempted ?? false,
+      readability_success:   readabilityResult?.success  ?? false,
+      candidate_count:        rankedResult?.candidates?.length ?? 0,
+      top_candidate_lengths:  rankedResult?.candidates?.slice(0, 5).map(c => c.length) ?? [],
+      top_candidate_scores:   rankedResult?.candidates?.slice(0, 5).map(c => Math.round(c.score)) ?? [],
       article_tag_exists: !!document.querySelector('article'),
-      main_tag_exists: !!document.querySelector('main')
+      main_tag_exists:    !!document.querySelector('main')
     }
   };
 }

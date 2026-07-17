@@ -26,10 +26,10 @@
     { category: 'clickbait',               weight: 15, reason: 'Clickbait wording pushes curiosity pressure.',                    pattern: /\b(you won't believe|you will not believe|shocking|secret|hidden|mind-blowing|before you)\b/gi },
     { category: 'emotional_pressure',      weight: 13, reason: 'Identity or guilt pressure pushes emotional compliance.',          pattern: /\b(if you care|don't stay silent|do not stay silent|wake up|open your eyes|only idiots)\b/gi },
     { category: 'fear_appeal',             weight: 13, reason: 'Threat-oriented wording increases fear pressure.',                 pattern: /\b(warning|danger|collapse|crisis|deadly|panic|catastrophe)\b/gi },
-    { category: 'outrage_amplification',   weight: 13, reason: 'Outrage-first wording primes anger over context.',                pattern: /\b(furious|outraged|slammed|destroyed|humiliated|betrayed|scandal)\b/gi },
+    { category: 'outrage_amplification',   weight: 13, reason: 'Outrage-first wording primes anger over context.',                pattern: /\b(furious|outraged|slammed|destroy(?:ing|ed|s)?|humiliated|betrayed|scandal|enraged|appalling|disgrace)\b/gi },
     { category: 'false_urgency',           weight: 12, reason: 'Urgency cues pressure immediate reaction.',                        pattern: /\b(act now|right now|before it's too late|before it is too late|last chance|must see|don't miss|do not miss)\b/gi },
     { category: 'loaded_language',         weight: 11, reason: 'Loaded language can bias interpretation.',                         pattern: /\b(corrupt|evil|traitors|idiots|shameless|disgusting|lies)\b/gi },
-    { category: 'enemy_construction',      weight: 13, reason: 'Us-versus-them framing constructs enemy targets.',                 pattern: /\b(traitors|enemies of the people|the elites|they don't want you to know|they do not want you to know|they are destroying us|corrupt media)\b/gi },
+    { category: 'enemy_construction',      weight: 13, reason: 'Us-versus-them framing constructs enemy targets.',                 pattern: /\b(traitors|enemies of the people|the elites|they don't want you to know|they do not want you to know|they are destroy(?:ing)? us|destroy(?:ing|ed)? everything|corrupt media)\b/gi },
     { category: 'polarization',            weight: 12, reason: 'Polarizing language frames rigid camps.',                          pattern: /\b(us vs them|real [a-z]+|anti-national|woke mob|leftists|right-wingers|pick a side)\b/gi },
     { category: 'certainty_inflation',     weight: 10, reason: 'Absolute certainty removes nuance.',                               pattern: /\b(always|never|everyone knows|nobody talks about|proves|proof that|undeniable|guaranteed|without question|no doubt)\b/gi },
     { category: 'source_obscurity',        weight: 10, reason: 'Vague sourcing weakens verifiability.',                            pattern: /\b(experts say|sources say|people are saying|some say|many believe|it is believed|reportedly|allegedly|rumor has it)\b/gi },
@@ -49,7 +49,7 @@
     outrage: {
       label: 'Outrage',
       color: '#EF4444',
-      topicKeywords: /\b(outrage|outraged|furious|enraged|disgusting|shameless|betrayed|humiliated|destroyed|slammed|backlash|scandal|controversy|shocking|appalling|disgrace)\b/gi,
+      topicKeywords: /\b(outrage|outraged|furious|enraged|disgusting|shameless|betrayed|humiliated|destroy(?:ing|ed|s)?|slammed|backlash|scandal|controversy|shocking|appalling|disgrace|rage|wrath)\b/gi,
       tactics: ['outrage_amplification', 'emotional_pressure', 'loaded_language', 'fear_appeal']
     },
     politics: {
@@ -161,7 +161,7 @@
     } else {
       lines.push(`${level} nudge activity: strongest signals were ${topCategories.length ? topCategories.join(', ') : 'distributed across multiple categories'}.`);
       for (const t of cleanTop.slice(0, 3)) {
-        lines.push(`${formatSignal(t.signal)} — ${humanCategory(t.category)}: ${t.reason}`);
+        lines.push(`${formatSignal(t.signal)} (${humanCategory(t.category)}): ${t.reason}`);
       }
       if (!cleanTop.length) {
         lines.push('Multiple weaker signals combined to raise the score without a single dominant phrase.');
@@ -216,7 +216,7 @@
     }
 
     // --- Legacy composite scores (kept for compatibility) ---
-    const attention = clamp(Math.round(norm.attention_capture * 0.34 + norm.clickbait * 0.30 + norm.engagement_bait * 0.20 + norm.social_proof_pressure * 0.16));
+    const attention = clamp(Math.round(norm.attention_capture * 0.28 + norm.clickbait * 0.26 + norm.engagement_bait * 0.28 + norm.social_proof_pressure * 0.18));
     const emotion   = clamp(Math.round(norm.emotional_pressure * 0.32 + norm.fear_appeal * 0.24 + norm.outrage_amplification * 0.24 + norm.false_urgency * 0.20));
     const framing   = clamp(Math.round(norm.loaded_language * 0.26 + norm.enemy_construction * 0.30 + norm.polarization * 0.24 + norm.certainty_inflation * 0.20));
     const source    = clamp(Math.round(norm.source_obscurity * 0.74 + norm.certainty_inflation * 0.14 + norm.social_proof_pressure * 0.12));

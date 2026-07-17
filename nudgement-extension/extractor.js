@@ -116,5 +116,39 @@
     return kept.join(' ');
   }
 
-  return { cleanText, rankReadableCandidates, cleanBodyFallback, words };
+  // ─── Boilerplate filtering ────────────────────────────────────────────────────
+  // Removes common UI chrome lines that leak into extracted text:
+  // nav labels, subscribe prompts, cookie notices, social share buttons, etc.
+  // Inspired by clutter-audit patterns from Memact/Capture.
+  const BOILERPLATE_LINES = [
+    /^(sign\s*in|sign\s*up|log\s*in|log\s*out|register|login|logout)\.?$/i,
+    /\bsubscribe\b.{0,40}\b(newsletter|email|alert|free|weekly|daily)\b/i,
+    /^(cookie|privacy)\s*(policy|notice|consent|banner|settings?|preferences?)\.?$/i,
+    /\ball\s*rights\s*reserved\b/i,
+    /^copyright\s*©?\s*\d{4}/i,
+    /^(share|follow\s*us|follow\s*on|comment\s*below|tag\s*someone)$/i,
+    /^(read\s*more|continue\s*reading|click\s*here|load\s*more|see\s*(all|more)|show\s*more)\.?$/i,
+    /^(back\s*to\s*top|skip\s*to\s*(main\s*)?(content|navigation))\.?$/i,
+    /^(advertisement|sponsored\s*content?|promoted|ad\s*choices?)\.?$/i,
+    /^https?:\/\/\S+$/,
+    /^[\-=*_#|.]{6,}$/,
+    /\bclick\s*the\s*bell\b/i,
+    /\bthis\s*(article|post|story)\s*was\s*(generated|written|produced)\s*by\s*(ai|an?\s*ai)/i,
+  ];
+
+  function filterBoilerplate(text) {
+    if (!text) return text;
+    const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return text;
+    const kept = lines.filter(line => {
+      if (line.length < 15) return false;
+      if (line.split(/\s+/).length < 4) return false;
+      return !BOILERPLATE_LINES.some(p => p.test(line));
+    });
+    // Safety net: if filtering removed too much, return original
+    if (kept.length === 0 || kept.join(' ').length < text.length * 0.25) return text;
+    return kept.join(' ');
+  }
+
+  return { cleanText, rankReadableCandidates, cleanBodyFallback, words, filterBoilerplate };
 });
